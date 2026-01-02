@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <base href="$FLUTTER_BASE_HREF">
+    <title>講師分潤計算 Pro - 呼吸光感版</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --text-gold: #fbbf24;
+            --low-gold: #92400e;
+            --bright-gold: #fcd34d;
+            
+            /* 光譜色定義 */
+            --color-sales: #3b82f6;   /* 藍 */
+            --color-score: #10b981;   /* 綠 */
+            --color-new: #f43f5e;     /* 紅 */
+            --color-coop: #8b5cf6;    /* 紫 */
+        }
+
+        body {
+            font-family: -apple-system, "微軟正黑體", sans-serif;
+            background-color: var(--bg-dark);
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        /* 呼吸發光邊框動畫 */
+        @keyframes breathing-glow {
+            0% { 
+                box-shadow: 0 0 5px rgba(251, 191, 36, 0.2);
+                border-color: var(--low-gold);
+            }
+            50% { 
+                box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+                border-color: var(--bright-gold);
+            }
+            100% { 
+                box-shadow: 0 0 5px rgba(251, 191, 36, 0.2);
+                border-color: var(--low-gold);
+            }
+        }
+
+        /* 按鈕呼吸背景動畫 (4秒週期) */
+        @keyframes breathing-bg {
+            0% { background-color: #78350f; } /* 暗金 */
+            50% { background-color: #d97706; } /* 亮金 */
+            100% { background-color: #78350f; }
+        }
+
+        .result-card {
+            background: #1e293b;
+            border: 2px solid var(--low-gold);
+            border-radius: 24px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 25px;
+            /* 套用呼吸邊框 */
+            animation: breathing-glow 4s ease-in-out infinite;
+        }
+
+        .total-amount {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--text-gold);
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            transition: color 0.3s;
+        }
+
+        input, select {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 14px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.4s ease;
+        }
+
+        /* 滑鼠滑過色彩變化 (Individual Colors) */
+        #salesAmount:hover, #salesAmount:focus { border-color: var(--color-sales); box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
+        #satisfactionScore:hover, #satisfactionScore:focus { border-color: var(--color-score); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+        #newStudentCount:hover, #newStudentCount:focus { border-color: var(--color-new); box-shadow: 0 0 10px rgba(244, 63, 94, 0.4); }
+        #cooperationStatus:hover, #cooperationStatus:focus { border-color: var(--color-coop); box-shadow: 0 0 10px rgba(139, 92, 246, 0.4); }
+
+        /* 呼吸金屬按鈕 */
+        .btn-copy {
+            width: 100%;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            animation: breathing-bg 4s ease-in-out infinite;
+            transition: transform 0.2s, filter 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn-copy:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .btn-copy:active {
+            transform: scale(0.98);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+        }
+
+        .detail-item {
+            text-align: left;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .detail-item span {
+            display: block;
+            color: #f8fafc;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="result-card">
+        <div style="color: var(--text-gold); font-size: 0.9rem; letter-spacing: 2px;">ESTIMATED PROFIT</div>
+        <div class="total-amount" id="totalProfit">NT$ 0</div>
+        
+        <div class="detail-grid">
+            <div class="detail-item">基礎分潤<span id="det-base">NT$ 0</span></div>
+            <div class="detail-item">滿意度獎勵<span id="det-perf">NT$ 0</span></div>
+            <div class="detail-item">新客獎勵<span id="det-new">NT$ 0</span></div>
+            <div class="detail-item">合作加成<span id="det-coop">NT$ 0</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="input-group">
+            <label>💰 課程銷售總額</label>
+            <input type="number" id="salesAmount" value="50000" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <label>⭐ 學員滿意度 (80分起算獎勵)</label>
+            <input type="number" id="satisfactionScore" value="95" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <label>🚀 新客招募人數</label>
+            <input type="number" id="newStudentCount" value="5" oninput="calculate()">
+        </div>
+
+        <div class="input-group">
+            <label>🤝 合作模式</label>
+            <select id="cooperationStatus" onchange="calculate()">
+                <option value="false">一般個人開課</option>
+                <option value="true">協同合作 (+3%)</option>
+            </select>
+        </div>
+
+        <button class="btn-copy" onclick="copyReport()">複製分潤報表</button>
+    </div>
+</div>
+
+<script>
+    const PARAMS = {
+        baseRate: 0.15,
+        satisfactionBonus: 0.0005, 
+        newClientBonusRate: 0.05,
+        cooperationBonusRate: 0.03
+    };
+
+    function calculate() {
+        const sales = parseFloat(document.getElementById('salesAmount').value) || 0;
+        const score = parseFloat(document.getElementById('satisfactionScore').value) || 0;
+        const newStudents = parseInt(document.getElementById('newStudentCount').value) || 0;
+        const isCoop = document.getElementById('cooperationStatus').value === 'true';
+
+        const baseProfit = sales * PARAMS.baseRate;
+        const perfBonus = sales * Math.max(0, score - 80) * PARAMS.satisfactionBonus;
+        const newBonus = sales * newStudents * PARAMS.newClientBonusRate;
+        const coopBonus = isCoop ? (sales * PARAMS.cooperationBonusRate) : 0;
+        const total = baseProfit + perfBonus + newBonus + coopBonus;
+
+        document.getElementById('totalProfit').textContent = `NT$ ${Math.round(total).toLocaleString()}`;
+        document.getElementById('det-base').textContent = `NT$ ${Math.round(baseProfit).toLocaleString()}`;
+        document.getElementById('det-perf').textContent = `NT$ ${Math.round(perfBonus).toLocaleString()}`;
+        document.getElementById('det-new').textContent = `NT$ ${Math.round(newBonus).toLocaleString()}`;
+        document.getElementById('det-coop').textContent = `NT$ ${Math.round(coopBonus).toLocaleString()}`;
+    }
+
+    function copyReport() {
+        const report = `【講師結算報表】\n總分潤：${document.getElementById('totalProfit').textContent}\n基礎：${document.getElementById('det-base').textContent}\n績效：${document.getElementById('det-perf').textContent}\n新客：${document.getElementById('det-new').textContent}\n合作：${document.getElementById('det-coop').textContent}`;
+        navigator.clipboard.writeText(report).then(() => alert('報表已複製！'));
+    }
+
+    window.onload = calculate;
+</script>
+
+</body>
+</html>
